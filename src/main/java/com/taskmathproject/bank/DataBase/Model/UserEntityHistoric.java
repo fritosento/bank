@@ -1,21 +1,21 @@
-package com.taskmathproject.bank.Model;
+package com.taskmathproject.bank.DataBase.Model;
 
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Historico")
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class TransfModel {
+@Table(name = "Historico")
+public class UserEntityHistoric {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,17 +23,20 @@ public class TransfModel {
     @CreationTimestamp
     private LocalDateTime horario;
 
-    @Column(name = "OrigemId")
-    private Long origemId;
-
-    @Column(name = "DestinoId")
-    private Long destinoId;
 
     @Column(name = "Origem")
     private String origem;
 
+    @Column(name = "OrigemEmail")
+    private String origemEmail;
+
+
     @Column(name = "Destino")
     private String destino;
+
+    @Column(name = "DestinoEmail")
+    private String destinoEmail;
+
 
     @Column(name = "valor")
     private BigDecimal valor;

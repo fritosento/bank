@@ -1,10 +1,13 @@
 package com.taskmathproject.bank.Service;
 
-import com.taskmathproject.bank.Depositar;
-import com.taskmathproject.bank.Model.BankModel;
-import com.taskmathproject.bank.Repository.BankRepository;
-import org.apache.coyote.Response;
-import org.springframework.http.ResponseEntity;
+import com.taskmathproject.bank.DTO.*;
+import com.taskmathproject.bank.DataBase.Model.UserEntity;
+import com.taskmathproject.bank.DataBase.Repository.BankRepository;
+import com.taskmathproject.bank.exeption.IllegalArgExeption;
+import com.taskmathproject.bank.exeption.NotFoundExeption;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,106 +15,173 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+
 @Service
+@RequiredArgsConstructor
 public class TransfService {
 
     private final BankRepository bankRepository;
+
     private final HistService histService;
 
-    public TransfService(BankRepository bankRepository, HistService histService) {
-        this.bankRepository = bankRepository;
-        this.histService = histService;
-    }
 
 //    GET
 
-    public List<BankModel>  getAll(){
-        return bankRepository.findAll();
+    public List<ResponseUserDTO> getAll(int pagina) {
+        Page<UserEntity> page = bankRepository.findAll(
+                PageRequest.of(pagina, 2)
+                );
+
+        return page.getContent()
+                .stream()
+                .map(ResponseUserDTO::new)
+                .toList();
     }
 
-    public BankModel getById(Long id){
-        return bankRepository.findById(id).orElseThrow(
-                () -> new IllegalArgumentException("Id não encontrado")
+    public ResponseUserDTO getById(Long id) {
+        UserEntity userDTO = bankRepository.findById(id).orElseThrow(
+                () -> new NotFoundExeption("Id não encontrado")
         );
+
+        return new  ResponseUserDTO(userDTO);
     }
 
-//    DELETE
+    public ResponseUserDTO getByName(String nome) {
+        UserEntity user = bankRepository.findByNome(nome)
+                .orElseThrow( () -> new NotFoundExeption("Nome Invalido/Não encontrado"));
 
-    public void delete(Long id){
-        bankRepository.deleteById(id);
+
+        return new ResponseUserDTO(user);
+    }
+
+    public ResponseUserDTO getByCpf(String cpf) {
+
+        UserEntity user = bankRepository.findByCpf(cpf)
+                .orElseThrow(() -> new NotFoundExeption("CPF invalido"));
+
+
+        return new ResponseUserDTO(user);
+
     }
 
 //    POST
 
-    public BankModel save(BankModel bankModel){
-        return bankRepository.save(bankModel);
+    public void save(CreateUserDTO userDTO) {
+        UserEntity userEntity =  UserEntity.builder()
+                .nome(userDTO.getNome())
+                .cpf(userDTO.getCpf())
+                .email(userDTO.getEmail())
+                .saldo(userDTO.getSaldo())
+                .limiteDiario(userDTO.getLimiteDiario())
+                .build();
+
+        bankRepository.save(userEntity);
+
     }
 
-    public List<BankModel> saveAll(List<BankModel> bankModels){
-        return bankRepository.saveAll(bankModels);
+    public void saveAll(List<CreateUserDTO> userDTO) {
+        List<UserEntity> userEntity = userDTO.stream()
+                .map(user -> UserEntity.builder()
+                .nome(user.getNome())
+                .cpf(user.getCpf())
+                .email(user.getEmail())
+                .saldo(user.getSaldo())
+                .limiteDiario(user.getLimiteDiario())
+                .build()
+            )
+            .toList();
+
+        bankRepository.saveAll(userEntity);
     }
 
     @Transactional
-    public ResponseEntity<List<BankModel>> transferirSaldo(Long origem, Long destino, Depositar deposito){
-        BankModel saida = bankRepository.findById(origem)
-                .orElseThrow(() -> new IllegalArgumentException("Id inexistente"));
-        BankModel recebimento = bankRepository.findById(destino)
-                .orElseThrow(() -> new IllegalArgumentException("Id inexistente"));
+    public void transferirSaldo(TransferenciaDTO dto) {
 
-        List<BankModel> transacao =  new ArrayList<>();
+        UserEntity saida =
+                bankRepository.findByEmail(dto.getOrigemEmail())
+                .orElseThrow(() -> new NotFoundExeption("Email não encontrado")
+        );
 
-        saida.setSaldo(saida.getSaldo().subtract(deposito.getValor()));
+        UserEntity recebimento =
+                bankRepository.findByEmail(dto.getDestinoEmail())
+                .orElseThrow(() -> new NotFoundExeption("Email não encontrado")
+        );
 
-        recebimento.setSaldo(recebimento.getSaldo().add(deposito.getValor()));
+        if (dto.getValorTransferencia().compareTo(saida.getLimiteDiario()) > 0) {
+            throw new IllegalArgExeption("Valor de transferência excedeu o limite diário");
+        }
+        if (dto.getValorTransferencia().compareTo(saida.getSaldo()) > 0 ){
+            throw new IllegalArgExeption("Saldo insuficiente");
+        }
+
+        saida.setLimiteDiario(saida.getLimiteDiario().subtract(dto.getValorTransferencia()));
+
+        List<UserEntity> transacao = new ArrayList<>();
+
+        saida.setSaldo(saida.getSaldo().subtract(dto.getValorTransferencia()));
+
+        recebimento.setSaldo(recebimento.getSaldo().add(dto.getValorTransferencia()));
 
         transacao.add(saida);
         transacao.add(recebimento);
 
         bankRepository.saveAll(transacao);
 
-        histService.salvarHistorico(
-                saida.getId(),
-                recebimento.getId(),
-                saida.getNome(),
-                recebimento.getNome(),
-                deposito);
-        
-        return ResponseEntity.ok().body(transacao);
+        histService.salvarHistorico( saida, recebimento, dto.getValorTransferencia() );
     }
 
 
 //    PUT
 
-    public BankModel updateAllById(Long id, BankModel bankModel){
-        BankModel Usuario =  bankRepository.findById(id).orElseThrow(
-                () -> new IllegalArgumentException("Id inexistente"));
-                Usuario.setCpf(bankModel.getCpf());
-                Usuario.setNome(bankModel.getNome());
-                Usuario.setSaldo(bankModel.getSaldo());
-                return  bankRepository.save(Usuario);
+    @Transactional
+    public void update(UpdateUserNameDTO dto) {
+        UserEntity user ;
+
+        if(dto.getEmailVerify() != null && !dto.getEmailVerify().isEmpty()) {
+            user = bankRepository.findByEmail(dto.getEmailVerify()).orElseThrow(
+                    () -> new IllegalArgExeption("Email inexistente"));
+
+        }else if (dto.getCpfVerify() != null && !dto.getCpfVerify().isEmpty()) {
+            user = bankRepository.findByCpf(dto.getCpfVerify())
+                    .orElseThrow( () -> new IllegalArgExeption("CPF invalido"));
+        }
+        else{
+            throw new IllegalArgExeption("Identificador invalido");
+        }
+        user.setNome(dto.getNome());
+
+        bankRepository.save(user);
     }
 
-    public BankModel updateNameById(Long id, BankModel bankModel){
-        BankModel Usuario =  bankRepository.findById(id).orElseThrow(
-                () -> new IllegalArgumentException("Id inexistente"));
-                Usuario.setNome(bankModel.getNome());
-        return bankRepository.save(Usuario);
+
+    public void depositarByEmail(String email, BigDecimal valor) {
+
+        UserEntity Usuario = bankRepository.findByEmail(email).orElseThrow(
+                () -> new IllegalArgExeption("Email inexistente")
+        );
+
+        Usuario.setSaldo(Usuario.getSaldo().add(valor));
+         bankRepository.save(Usuario);
     }
 
-    public BankModel depositarById (Long id, BigDecimal valor){
+    public SaqueDTO sacarByEmail(String email, BigDecimal valor) {
 
-        BankModel Usuario =  bankRepository.findById(id).orElseThrow(
-                () -> new IllegalArgumentException("Id inexistente"));
+        UserEntity Usuario = bankRepository.findByEmail(email).orElseThrow(
+                () -> new IllegalArgExeption("Id inexistente"));
 
-                Usuario.setSaldo(Usuario.getSaldo().add(valor));
-        return  bankRepository.save(Usuario);
+        Usuario.setSaldo(Usuario.getSaldo().subtract(valor));
+        bankRepository.save(Usuario);
+
+        return new SaqueDTO(Usuario) ;
+
     }
-    public BankModel sacarById (Long id, BigDecimal valor){
 
-        BankModel Usuario =  bankRepository.findById(id).orElseThrow(
-                () -> new IllegalArgumentException("Id inexistente"));
+//    DELETE
 
-                Usuario.setSaldo(Usuario.getSaldo().subtract(valor));
-        return  bankRepository.save(Usuario);
+    public void delete(Long id) {
+        bankRepository.deleteById(id);
+    }
+    public void deleteAll() {
+        bankRepository.deleteAll();
     }
 }

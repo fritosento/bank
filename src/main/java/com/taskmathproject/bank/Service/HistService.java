@@ -1,71 +1,71 @@
 package com.taskmathproject.bank.Service;
 
+import com.taskmathproject.bank.DTO.TransferenciaDTO;
+import com.taskmathproject.bank.DataBase.Model.UserEntity;
 import com.taskmathproject.bank.Depositar;
-import com.taskmathproject.bank.Model.TransfModel;
-import com.taskmathproject.bank.Repository.HistRepository;
-import jakarta.transaction.Transactional;
+import com.taskmathproject.bank.DataBase.Model.UserEntityHistoric;
+import com.taskmathproject.bank.DataBase.Repository.HistRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class HistService {
 
     private final HistRepository histRepository;
 
-
-
-    public HistService(HistRepository histRepository) {
-
-        this.histRepository = histRepository;
-    }
-
-
 // GET
 
-    public List<TransfModel>  getAll(){
+    public List<UserEntityHistoric>  getAll(){
         return histRepository.findAll();
     }
 
-    public ResponseEntity<List<TransfModel>> getHistoricoByUser(Long id){
-        List<TransfModel> historico = histRepository.findByOrigemIdOrDestinoId(id,id);
-        return ResponseEntity.ok(historico);
+    public List<UserEntityHistoric> getHistoricoByUser(String email){
+        return histRepository.findByOrigemEmailOrDestinoEmail(
+                email,email, Sort.by(Sort.Direction.DESC,"horario"));
     }
 
 
 // POST
-    public TransfModel save(TransfModel transf){
+    public UserEntityHistoric save(UserEntityHistoric transf){
             return histRepository.save(transf);
         }
 
-    public List<TransfModel> saveAll(List<TransfModel> histRepositories){
+    public List<UserEntityHistoric> saveAll(List<UserEntityHistoric> histRepositories){
         return histRepository.saveAll(histRepositories);
     }
 
 
     public void salvarHistorico(
-            Long origemId,
-            Long destinoId,
-            String origem,
-            String destino,
-            Depositar deposito
+        UserEntity origem,
+        UserEntity destino,
+        BigDecimal valorTransferencia
     ) {
 
-    TransfModel transf = TransfModel.builder().
-                origemId(origemId).
-                destinoId(destinoId).
-                origem(origem).
-                destino(destino).
-                valor(deposito.getValor())
-                .build();
+       List<UserEntityHistoric> historico = new ArrayList<>();
 
-        List<TransfModel> historico = new ArrayList<>();
+       UserEntityHistoric transf = UserEntityHistoric.builder()
 
-        historico.add(transf);
+            .origem(origem.getNome())
+            .origemEmail(origem.getEmail())
 
-        histRepository.saveAll(historico);
+            .destino(destino.getNome())
+            .destinoEmail(destino.getEmail())
+
+            .valor(valorTransferencia)
+
+            .build();
+
+
+       historico.add(transf);
+
+       histRepository.saveAll(historico);
     }
 
 }
