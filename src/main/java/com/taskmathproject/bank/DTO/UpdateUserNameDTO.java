@@ -13,8 +13,7 @@ import java.math.BigDecimal;
 public class UpdateUserNameDTO {
 
     private String nome;
-    private String emailVerify;
-    private String cpfVerify;
+    private String credencialVerify;
 
     public UpdateUserNameDTO(UserEntity userEntity) {
         BeanUtils.copyProperties(userEntity,this);

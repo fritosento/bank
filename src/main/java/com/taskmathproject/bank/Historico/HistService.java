@@ -53,10 +53,10 @@ public class HistService {
        UserEntityHistoric transf = UserEntityHistoric.builder()
 
             .origem(origem.getNome())
-            .origemEmail(origem.getEmail())
+            .origemCredencial(origem.getEmail())
 
             .destino(destino.getNome())
-            .destinoEmail(destino.getEmail())
+            .destinoCredencial(destino.getEmail())
 
             .valor(valorTransferencia)
 

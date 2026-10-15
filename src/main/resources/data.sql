@@ -1,0 +1,7 @@
+INSERT INTO USER_TABLE (cpf, limite_diario, nome, saldo, email)
+VALUES
+    ('510.484.240-14', 200.00, 'João Silva', 1500.50, 'joao.silva@email.com'),
+    ('391.846.870-45', 200.00, 'Maria Oliveira', 3200.75, 'maria.oliveira@email.com'),
+    ('142.075.870-55', 200.00, 'Carlos Santos', 850.00, 'carlos.santos@email.com'),
+    ('490.338.590-68', 200.00, 'Ana Souza', 7250.30, 'ana.souza@email.com'),
+    ('877.139.030-89', 200.00, 'Lucas Pereira', 430.90, 'lucas.pereira@email.com');
