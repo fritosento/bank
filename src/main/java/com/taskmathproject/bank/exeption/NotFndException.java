@@ -1,7 +1,7 @@
 package com.taskmathproject.bank.exeption;
 
-public class NotFoundExeption extends RuntimeException {
-    public NotFoundExeption(String message) {
+public class NotFndException extends RuntimeException {
+    public NotFndException(String message) {
         super(message);
     }
 }

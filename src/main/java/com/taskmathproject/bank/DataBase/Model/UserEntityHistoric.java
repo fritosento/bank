@@ -23,24 +23,21 @@ public class UserEntityHistoric {
     @CreationTimestamp
     private LocalDateTime horario;
 
-
     @Column(name = "Origem")
     private String origem;
 
-    @Column(name = "OrigemEmail")
-    private String origemEmail;
+    @Column(name = "OrigemCredencial")
+    private String origemCredencial;
 
 
     @Column(name = "Destino")
     private String destino;
 
-    @Column(name = "DestinoEmail")
-    private String destinoEmail;
+    @Column(name = "DestinoCredencial")
+    private String destinoCredencial;
 
 
     @Column(name = "valor")
     private BigDecimal valor;
-
-
 
 }

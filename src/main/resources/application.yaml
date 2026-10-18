@@ -1,20 +1,17 @@
+
 spring:
   application:
     name: bank
 
   datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: banco
-    password: Aluzionado
-
-  h2:
-    console:
-      enabled: true
+    url: jdbc:mysql://localhost:3306/bank_db
+    username: ${DATA_UserName}
+    password: ${DATA_Password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: create
     show-sql: true
     properties:
       hibernate:
@@ -22,4 +19,4 @@ spring:
 
   sql:
     init:
-      mode: always
+      mode: never

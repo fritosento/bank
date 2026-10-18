@@ -1,7 +1,7 @@
 package com.taskmathproject.bank.exeption;
 
-public class IllegalArgExeption extends RuntimeException {
-    public IllegalArgExeption(String message) {
+public class IllegalArgException extends RuntimeException {
+    public IllegalArgException(String message) {
         super(message);
     }
 }

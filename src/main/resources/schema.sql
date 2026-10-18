@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS USER_TABLE(
 
     saldo DECIMAL(19,2) NOT NULL,
 
-    email VARCHAR(255) NOT NULL
+    email VARCHAR(255) NOT NULL,
+
+    version INTEGER NOT NULL DEFAULT 0
 
 );
 
@@ -20,11 +22,11 @@ CREATE TABLE IF NOT EXISTS Historico(
 
     origem VARCHAR(255),
 
-    origem_email VARCHAR(255),
+    origem_credencial VARCHAR(255),
 
     destino VARCHAR(255),
 
-    destino_email VARCHAR(255),
+    destino_credencial VARCHAR(255),
     
     valor DECIMAL(19,2),
 

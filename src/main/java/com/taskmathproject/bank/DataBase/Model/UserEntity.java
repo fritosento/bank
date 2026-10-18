@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
-import org.hibernate.validator.constraints.UniqueElements;
 import org.hibernate.validator.constraints.br.CPF;
 
 import java.math.BigDecimal;
@@ -26,9 +25,12 @@ public class UserEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    private Integer version;
+
     @CPF
     @NotBlank
-    @Column(name = "cpf")
+    @Column(name = "cpf")   
     private String cpf;
 
     @NotBlank

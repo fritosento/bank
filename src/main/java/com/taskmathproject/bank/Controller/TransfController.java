@@ -3,7 +3,7 @@ package com.taskmathproject.bank.Controller;
 import com.taskmathproject.bank.DTO.*;
 import com.taskmathproject.bank.Depositar;
 import com.taskmathproject.bank.DataBase.Model.UserEntityHistoric;
-import com.taskmathproject.bank.Service.HistService;
+import com.taskmathproject.bank.Historico.HistService;
 import com.taskmathproject.bank.Service.TransfService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -26,35 +26,35 @@ public class TransfController {
 
 
     @GetMapping("/AllClients")
-
     public ResponseEntity<List<ResponseUserDTO>> getClientes(
             @RequestParam(value = "page", defaultValue = "0")
             @Min(value = 0)  int page
     ){
         return ResponseEntity.ok(transfService.getAll(page));
     }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<ResponseUserDTO> getClientesById(@PathVariable Long id){
-        return ResponseEntity.ok(transfService.getById(id));
+    @GetMapping("/Nome")
+    public ResponseEntity<ResponseUserDTO> getClientesByName(
+            @RequestParam(value = "nome", defaultValue = "")String nome
+    ){
+        return ResponseEntity.ok(transfService.getByName(nome));
     }
 
-    @GetMapping("/{nome}")
-    public ResponseEntity<ResponseUserDTO> getClienteByName(@PathVariable String nome){
-        return  ResponseEntity.ok(transfService.getByName(nome));
+    @GetMapping("/clientes")
+    public ResponseEntity<ResponseUserDTO> getClientesByDTO(
+            @RequestParam(required = false) @Valid String credencial
+    ){
+        return ResponseEntity.ok(transfService.buscarCliente(credencial));
     }
-    @GetMapping("/{cpf}")
-    public ResponseEntity<ResponseUserDTO> getClienteByCpf(@PathVariable String cpf){
-        return  ResponseEntity.ok(transfService.getByCpf(cpf));
-    }
+
+
 
     @GetMapping("/Historico")
     public ResponseEntity<List<UserEntityHistoric>> getHistorico(){
         return ResponseEntity.ok(histService.getAll());
     }
 
-    @GetMapping("/Historico/{id}")
-    public  ResponseEntity<List<UserEntityHistoric>> getHistoricoByEmail(@PathVariable String email){
+    @GetMapping("/Historico/{email}")
+    public  ResponseEntity<List<UserEntityHistoric>> getHistoricoByEmail(@RequestParam String email){
         return ResponseEntity.ok(histService.getHistoricoByUser(email));
     }
 
@@ -75,21 +75,17 @@ public class TransfController {
 
     @PostMapping("/transferir")
     public ResponseEntity<List<Void>> transferirSaldo(
-            @RequestBody TransferenciaDTO dto
+            @RequestParam String origem,
+            @RequestParam String destino,
+            @RequestParam BigDecimal valor
     ){
+        TransferenciaDTO dto = TransferenciaDTO
+                .builder()
+                .origem(origem)
+                .destino(destino)
+                .valorTransferencia(valor)
+                .build();
 
-        if (dto.getOrigemEmail().isEmpty() || dto.getDestinoEmail().isEmpty()){
-            throw new IllegalArgumentException("Email invalido");
-
-        }
-
-        if (dto.getOrigemEmail().equals(dto.getDestinoEmail())){
-            throw new IllegalArgumentException("Os emails não podem ser iguais");
-        }
-
-        if(dto.getValorTransferencia().compareTo(BigDecimal.ZERO) <= 0){
-            throw new IllegalArgumentException("Valor inválido");
-        }
         transfService.transferirSaldo(dto);
 
         return ResponseEntity.noContent().build();
@@ -106,24 +102,30 @@ public class TransfController {
         return ResponseEntity.noContent().build();
     }
 
-
-    @PutMapping("/Deposito/{email}")
+    @PutMapping("/Deposito")
     public ResponseEntity<Void> depositarSaldo(
-            @PathVariable String email,
-            @RequestBody @Valid Depositar deposito
+            @RequestParam String email,
+            @RequestParam BigDecimal valor
+//            @PathVariable String email,
+//            @RequestBody Depositar deposito
     ){
-
-        if(deposito.getValor().compareTo(BigDecimal.ZERO) <= 0){
+        DepositoDTO dto = DepositoDTO
+                .builder()
+                .email(email)
+                .valor(valor)
+                .build();
+        if(dto.getValor().compareTo(BigDecimal.ZERO) <= 0){
             throw new IllegalArgumentException("Valor inválido");
         }
 
-         transfService.depositarByEmail(email, deposito.getValor());
+         transfService.depositarByEmail(dto.getEmail(), dto.getValor());
         return ResponseEntity.noContent().build();
     }
+
     @PutMapping("/Saque/{email}")
     public ResponseEntity<SaqueDTO> saqueSaldo(
             @PathVariable String email,
-            @RequestBody @Valid Depositar deposito
+            @RequestBody Depositar deposito
     ){
 
         if(deposito.getValor().compareTo(BigDecimal.ZERO) <= 0){
@@ -135,7 +137,7 @@ public class TransfController {
     }
 
     @DeleteMapping("/encerrar/{id}")
-    public void delete(@PathVariable     Long id) {
+    public void delete(@PathVariable  Long id) {
         if (transfService.getById(id).getSaldo().compareTo(BigDecimal.ZERO) > 0 ) {return;}
 
         transfService.delete(id);

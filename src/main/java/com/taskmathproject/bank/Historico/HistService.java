@@ -1,13 +1,10 @@
-package com.taskmathproject.bank.Service;
+package com.taskmathproject.bank.Historico;
 
-import com.taskmathproject.bank.DTO.TransferenciaDTO;
 import com.taskmathproject.bank.DataBase.Model.UserEntity;
-import com.taskmathproject.bank.Depositar;
 import com.taskmathproject.bank.DataBase.Model.UserEntityHistoric;
 import com.taskmathproject.bank.DataBase.Repository.HistRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -27,7 +24,7 @@ public class HistService {
     }
 
     public List<UserEntityHistoric> getHistoricoByUser(String email){
-        return histRepository.findByOrigemEmailOrDestinoEmail(
+        return histRepository.findByOrigemCredencialOrDestinoCredencial(
                 email,email, Sort.by(Sort.Direction.DESC,"horario"));
     }
 
@@ -45,7 +42,7 @@ public class HistService {
     public void salvarHistorico(
         UserEntity origem,
         UserEntity destino,
-        BigDecimal valorTransferencia
+        HistoricoDTO historicoDTO
     ) {
 
        List<UserEntityHistoric> historico = new ArrayList<>();
@@ -53,12 +50,12 @@ public class HistService {
        UserEntityHistoric transf = UserEntityHistoric.builder()
 
             .origem(origem.getNome())
-            .origemCredencial(origem.getEmail())
+            .origemCredencial(historicoDTO.getCredencialOrigem())
 
             .destino(destino.getNome())
-            .destinoCredencial(destino.getEmail())
+            .destinoCredencial(historicoDTO.getCredencialDestino())
 
-            .valor(valorTransferencia)
+            .valor(historicoDTO.getValorTransferencia())
 
             .build();
 

@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface HistRepository extends JpaRepository<UserEntityHistoric,Long> {
-    List<UserEntityHistoric> findByOrigemEmailOrDestinoEmail(String origemEmail, String destinoEmail, Sort sort);
+    List<UserEntityHistoric> findByOrigemCredencialOrDestinoCredencial(String origem, String destino, Sort sort);
 }
